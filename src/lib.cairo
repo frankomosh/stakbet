@@ -1,3 +1,3 @@
 // src/lib.cairo
-mod stakbet;
+mod event_details;
 
