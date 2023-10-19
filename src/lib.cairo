@@ -1,3 +1,3 @@
 // src/lib.cairo
-mod event_details;
+mod bet_details;
 
