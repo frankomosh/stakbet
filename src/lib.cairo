@@ -1,3 +1,3 @@
 // src/lib.cairo
-mod bet_details;
+mod bet_contract;
 
