@@ -1,18 +1,19 @@
-#[contract]
+#[starknet::contract]
 mod Oracle {
-
+    use core::starknet::event::EventEmitter;
+    #[storage]
     struct Storage {
         winningCandidate: felt252,
     }
 
     #[constructor]
-    fn constructor(_winningCandidate: felt252){
-        winningCandidate::write(_winningCandidate)
+    fn constructor(ref self: ContractState, _winningCandidate: felt252) {
+        self.winningCandidate.write(_winningCandidate);
     }
 
-    #[external]
-    fn getPredictionWinner() -> felt252{
-        winningCandidate::read()
+    #[external(v0)]
+    fn getPredictionWinner(self: @ContractState) -> felt252 {
+        self.winningCandidate.read()
     }
-
 }
+
