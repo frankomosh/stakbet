@@ -1,3 +1,5 @@
 // src/lib.cairo
-mod bet_contract;
+mod business_logic;
+// mod contract;
+
 

@@ -9,6 +9,9 @@ trait IERC20 {
     fn get_symbol() -> felt252;
 
     #[view]
+    fn get_decimals() -> felt252;
+
+    #[view]
     fn get_total_supply() -> felt252;
 
     #[view]
@@ -25,4 +28,10 @@ trait IERC20 {
 
     #[external]
     fn approve(spender: ContractAddress, amount: u256);
+
+    #[external]
+    fn increase_allowance(spender: ContractAddress, added_value: u256);
+
+    #[external]
+    fn decrease_allowance(spender: ContractAddress, subtracted_value: u256);
 }
