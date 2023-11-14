@@ -1,21 +1,4 @@
 use starknet::ContractAddress;
-use traits::{Into, TryInto};
-use option::OptionTrait;
-
-#[starknet::interface]
-trait ERC20<TContractState> {
-    fn name(self: @TContractState) -> felt252;
-    fn symbol(self: @TContractState) -> felt252;
-    fn decimals(self: @TContractState) -> u8;
-    fn total_supply(self: @TContractState) -> u256;
-    fn balanceOf(self: @TContractState, account: ContractAddress) -> u256;
-    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
-    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transferFrom(
-        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
-}
 
 #[starknet::interface]
 trait IBetContract<ContractState> {
@@ -27,17 +10,21 @@ trait IBetContract<ContractState> {
 }
 #[starknet::contract]
 mod BetContract {
-    use starknet::ContractAddress;
-    use starknet::get_caller_address;
-    use starknet::get_contract_address;
-    use starknet::get_block_timestamp;
+    // use super::{IERC20Dispatcher, IERC20DispatcherTrait, target};
+    // use bet_contract::contract:IERC20::IERC20DispatcherTrait;
+    // use bet_contract::contract::IERC20::IERC20Dispatcher;
+    // use bet_contract::contract::IOracle::IOracleDispatcherTrait;
+    // use bet_contract::contract::IOracle::IOracleDispatcher;
+    use super::IERC20DispatcherTrait;
+    use super::IERC20Dispatcher;
+
+    use starknet::{
+        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
+        storage_write_syscall, storage_read_syscall, StorageBaseAddress, SyscallResult,
+        storage_address_from_base_and_offset, contract_address::Felt252TryIntoContractAddress
+    };
+    use zeroable::Zeroable;
     use integer::u256_from_felt252;
-    use starknet::SyscallResult;
-    use starknet::StorageBaseAddress;
-    use starknet::storage_address_from_base_and_offset;
-    use starknet::storage_write_syscall;
-    use starknet::storage_read_syscall;
-    use ERC20::IERC20Dispatcher;
 
 
     #[storage]
@@ -144,11 +131,11 @@ mod BetContract {
             let winner = IOracleDispatcher { contract_address: self.oracle.read() }
                 .getPredictionWinner();
             //Make sure that deadline is passed before reward is processed
-            assert(get_block_timestamp() > self.deadline.read(), "Deadline has not passed");
+            assert(get_block_timestamp() > self.deadline.read(), 'Deadline has not passed');
             //Ensure that the prediction has not been redeemed already
-            assert(p.redeemed == bool_to_felt252(false), "Reward already redeemed");
+            assert(p.redeemed == bool_to_felt252(false), 'Reward already redeemed');
             //Ensure that the candidate is the correct winner
-            assert(p.candidate == winner, "Prediction was incorrect");
+            assert(p.candidate == winner, 'Prediction was incorrect');
             //Calculate reward
             let reward = (p.tokenAmount * u256_from_felt252(self.totalPayout.read()));
             //update user balance with the reward
@@ -170,7 +157,7 @@ mod BetContract {
             let caller = get_caller_address();
             let user_bal = self.user_balances.read(caller);
             //Make sure balance is not zero
-            assert(user_bal > 0, "Balance is zero");
+            assert(user_bal > 0, 'No tokens to withdraw');
             //Transfer balances to user
             let token_address = self.token.read();
             IERC20Dispatcher { contract_address: token_address }.transfer(caller, user_bal);

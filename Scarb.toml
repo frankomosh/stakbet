@@ -4,9 +4,23 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
-[dependencies]
+
 starknet = ">=2.2.0"
 
 [[target.starknet-contract]]
-sierra = true
+sierra = false
+
+
+[[target.starknet-contract]]
+casm = true
+
+
+
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.10.2" }
+
+
+[tool.snforge]
+exit_first = true
+
+
 

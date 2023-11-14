@@ -1,5 +1,7 @@
-#[abi]
-trait IOracle {
+use starknet::ContractAddress;
+#[starknet::interface]
+// #[abi()]
+trait IOracle<TContractState> {
     #[external]
-    fn getPredictionWinner() -> felt252;
+    fn getPredictionWinner(self: @TContractState) -> felt252;
 }
