@@ -1,4 +1,5 @@
 use starknet::ContractAddress;
+// use stakbet::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
 
 #[starknet::interface]
 trait IBetContract<ContractState> {
@@ -11,12 +12,13 @@ trait IBetContract<ContractState> {
 #[starknet::contract]
 mod BetContract {
     // use super::{IERC20Dispatcher, IERC20DispatcherTrait, target};
-    // use bet_contract::contract:IERC20::IERC20DispatcherTrait;
-    // use bet_contract::contract::IERC20::IERC20Dispatcher;
-    // use bet_contract::contract::IOracle::IOracleDispatcherTrait;
-    // use bet_contract::contract::IOracle::IOracleDispatcher;
-    use super::IERC20DispatcherTrait;
-    use super::IERC20Dispatcher;
+    
+     use stakbet::contract::IERC20::IERC20Dispatcher;
+     use stakbet::contract::IERC20::IERC20DispatcherTrait;
+     use stakbet::contract::IOracle::IOracleDispatcherTrait;
+     use stakbet::contract::IOracle::IOracleDispatcher;
+    //  use bet_contract::ERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
+    // use super::;
 
     use starknet::{
         ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
@@ -51,8 +53,10 @@ mod BetContract {
         amount: u256,
         candidate: felt252
     }
-    #[derive(Drop, Serde)]
+    // #[derive(Drop, Serde)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
     struct Prediction {
+        #[external(v0)]
         participant: ContractAddress,
         tokenAmount: u256,
         candidate: felt252,
@@ -94,12 +98,12 @@ mod BetContract {
             assert(allowance >= _amount, 'Contract not approved');
             //Check if user has enough balance to make the prediction
             let userTokenBal = IERC20Dispatcher { contract_address: token_address }
-                .balance_of(caller);
+                .balanceOf(caller);
             assert(userTokenBal >= _amount, 'User balance less than amount');
 
             // if everything checks out, transfer the token amount from user to contract
             IERC20Dispatcher { contract_address: token_address }
-                .transfer_from(caller, this_contract, _amount);
+                .transferFrom(caller, this_contract, _amount);
 
             // once the transfer is successful write a mapping of the prediction for this user address
             let p = Prediction {

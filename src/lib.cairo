@@ -1,4 +1,4 @@
 // src/lib.cairo
-// mod contract;
+mod contract;
 mod business_logic;
 
