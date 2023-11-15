@@ -8,17 +8,14 @@ trait IBetContract<ContractState> {
     ) -> ();
     fn redeem_reward(ref self: ContractState, predictionID: felt252) -> ();
     fn withdraw_tokens(ref self: ContractState, amount: u256) -> ();
+    fn extend_deadline(ref self: ContractState, new_deadline: u64) -> ();
 }
 #[starknet::contract]
 mod BetContract {
-    // use super::{IERC20Dispatcher, IERC20DispatcherTrait, target};
-    
-     use stakbet::contract::IERC20::IERC20Dispatcher;
-     use stakbet::contract::IERC20::IERC20DispatcherTrait;
-     use stakbet::contract::IOracle::IOracleDispatcherTrait;
-     use stakbet::contract::IOracle::IOracleDispatcher;
-    //  use bet_contract::ERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
-    // use super::;
+    use stakbet::contract::IERC20::IERC20Dispatcher;
+    use stakbet::contract::IERC20::IERC20DispatcherTrait;
+    use stakbet::contract::IOracle::IOracleDispatcherTrait;
+    use stakbet::contract::IOracle::IOracleDispatcher;
 
     use starknet::{
         ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
@@ -27,7 +24,6 @@ mod BetContract {
     };
     use zeroable::Zeroable;
     use integer::u256_from_felt252;
-
 
     #[storage]
     struct Storage {
@@ -53,7 +49,6 @@ mod BetContract {
         amount: u256,
         candidate: felt252
     }
-    // #[derive(Drop, Serde)]
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct Prediction {
         #[external(v0)]
@@ -167,6 +162,12 @@ mod BetContract {
             IERC20Dispatcher { contract_address: token_address }.transfer(caller, user_bal);
             //Update user balance
             self.user_balances.write(caller, 0);
+        }
+        fn extend_deadline(ref self: ContractState, new_deadline: u64) -> () {
+            //Make sure that the deadline is not already passed
+            assert(get_block_timestamp() < self.deadline.read(), 'Deadline has passed');
+            //Update deadline
+            self.deadline.write(new_deadline);
         }
     }
     #[generate_trait]

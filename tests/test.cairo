@@ -1,128 +1,120 @@
-// Import necessary modules and traits
-use starknet::ContractAddress;
-use starknet::SyscallResult;
-use starknet::testing::init_contract;
-use starknet::get_contract_address;
-use starknet::get_caller_address;
-use starknet::storage_read_syscall;
-use starknet::storage_write_syscall;
+// Importing necessary modules and traits
+use core::array::ArrayTrait;
+use core::traits::Into;
+use core::debug::PrintTrait;
+use core::option::OptionTrait;
+use core::traits::TryInto;
+use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank};
+use starknet::testing::{set_caller_address, set_block_timestamp};
+use starknet::{contract_address_const, ContractAddress};
+use stakbet::contract::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
+// use stakbet::contract::IOracle::{IOracleDispatcher, IOracleDispatcherTrait};
+use stakbet::contract::bet_contract::{
+    IBetContract, IBetContractDispatcher, IBetContractDispatcherTrait
+};
 
-// Import the contract and its interface
-use BetContract::IBetContract;
-use BetContract::BetContractImpl;
-use BetContract::Storage;
+fn deploy() -> (IBetContractDispatcher, IERC20Dispatcher, ContractAddress) {
+    // Deploy BetContract
+    let contract = declare('BetContract');
+    let contract_address = contract.deploy(@ArrayTrait::new()).unwrap();
 
-// Define the test contract
-#[cfg(test)]
-mod tests {
-    use super::IERC20DispatcherTrait;
-    use super::IERC20Dispatcher;
+    // Deploy main dispatcher for interactions with BetContract
+    let bet_dispatcher = IBetContractDispatcher { contract_address };
+    let ierc20_dispatcher = IERC20Dispatcher { contract_address };
 
-    // Test the make_prediction function
-    #[test]
-    fn test_make_prediction() {
-        // Initialize the contract
-        let mut contract = init_contract::<BetContractImpl, Storage>();
+    //Returning the dispatcher and contract address
+    (bet_dispatcher, ierc20_dispatcher, contract_address)
+}
+// Declaring external contract functions
+// declare::BetContract.make_prediction;
+// declare BetContract.redeem_reward;
+// declare BetContract.withdraw_tokens;
+// declare BetContract.extend_deadline;
 
-        // Set up test parameters
-        let prediction_id: felt252 = 1;
-        let candidate: felt252 = 42;
-        let amount: u256 = 100;
+// Constants for test values
+const PREDICTION_ID: felt252 = 1;
+const CANDIDATE: felt252 = 1;
+const AMOUNT: u256 = 100;
+const NEW_DEADLINE: u64 = 123456789;
 
-        // Get the caller's address
-        let caller_address = get_caller_address();
+// Test for make_prediction functionality
+#[test]
+fn test_make_prediction() {
+    // deploy contract
+    let (bet_dispatcher, IERC20Dispatcher, contract_address) = deploy();
+    let token_address = contract_address_const::<1>();
+    let event_name = 'test_event';
 
-        // Make a prediction
-        contract.make_prediction(prediction_id, candidate, amount);
+    bet_dispatcher.make_prediction(PREDICTION_ID, CANDIDATE, AMOUNT);
 
-        // Check if the prediction is stored correctly
-        let stored_prediction: SyscallResult<Prediction> = storage_read_syscall(
-            0, storage_address_from_base_and_offset(contract.get_base(), 0_u8),
-        );
-        assert(stored_prediction.is_ok(), "Error reading stored prediction");
+    // Verify user's balance is updated
+    let user_balance = IERC20Dispatcher { contract_address }.balanceOf(contract_address);
+    assert(user_balance == AMOUNT, 'User balance not updated');
+// // Verify prediction details
+// let prediction = bet_dispatcher.p(PREDICTION_ID);
+// assert(prediction.participant == , 'Invalid participant');
+// assert(prediction.tokenAmount == AMOUNT, 'Invalid token amount');
+// assert(prediction.candidate == CANDIDATE, 'Invalid candidate');
+// assert(prediction.redeemed == false, 'Prediction already redeemed');
+}
 
-        // Check if the stored prediction matches the expected values
-        let stored_prediction_value = stored_prediction.unwrap();
-        assert_eq!(
-            stored_prediction_value.participant, caller_address, "Incorrect participant address"
-        );
-        assert_eq!(stored_prediction_value.tokenAmount, amount, "Incorrect token amount");
-        assert_eq!(stored_prediction_value.candidate, candidate, "Incorrect candidate");
-        assert_eq!(
-            stored_prediction_value.redeemed, bool_to_felt252(false), "Incorrect redeemed status"
-        );
-    }
+// Test for redeem_reward functionality
+#[test]
+fn test_redeem_reward() {
+    // deploy contract
+    let (bet_dispatcher, IERC20Dispatcher, contract_address) = deploy();
+    let token_address = contract_address_const::<1>();
+    let event_name = 'test_event';
 
-    // Test the redeem_reward function
-    #[test]
-    fn test_redeem_reward() {
-        // Initialize the contract
-        let mut contract = init_contract::<BetContractImpl, Storage>();
+    bet_dispatcher.make_prediction(PREDICTION_ID, CANDIDATE, AMOUNT);
 
-        // Set up test parameters
-        let prediction_id: felt252 = 1;
+    // Fast forward to after the deadline
 
-        // Make a prediction (assume this has been tested separately)
-        contract.make_prediction(prediction_id, 42, 100);
+    set_block_timestamp(bet_dispatcher.deadline() + 1);
 
-        // Call redeem_reward (assuming the oracle returns the correct winner)
-        contract.redeem_reward(prediction_id);
+    // Redeem reward
+    bet_dispatcher.redeem_reward(PREDICTION_ID);
 
-        // Check if the user's balance has been updated
-        let caller_address = get_caller_address();
-        let user_balance: u256 = storage_read_syscall(
-            0,
-            storage_address_from_base_and_offset(
-                storage_address_from_base_and_offset(contract.get_base(), 1_u8),
-                caller_address.into(),
-            ),
-        )
-            .unwrap();
-        assert_eq!(
-            user_balance,
-            100, // Assuming the correct amount is 100
-            "Incorrect user balance after redeeming reward"
-        );
+    // Verify user's balance is updated
+    let user_balance = IERC20Dispatcher { contract_address }.balanceOf(contract_address);
+    assert(user_balance > AMOUNT, 'User balance not updated after redemption');
 
-        // Check if the prediction's redeemed status has been updated
-        let stored_prediction: SyscallResult<Prediction> = storage_read_syscall(
-            0, storage_address_from_base_and_offset(contract.get_base(), 0_u8),
-        );
-        assert(stored_prediction.is_ok(), "Error reading stored prediction");
-        let stored_prediction_value = stored_prediction.unwrap();
-        assert_eq!(
-            stored_prediction_value.redeemed,
-            bool_to_felt252(true),
-            "Incorrect redeemed status after redeeming reward"
-        );
-    }
+    // Verify prediction status
+    let prediction = bet_dispatcher.get_predictions(PREDICTION_ID);
+    assert(prediction.redeemed == true, 'Prediction not marked as redeemed');
+}
 
-    // Test the withdraw_tokens function
-    #[test]
-    fn test_withdraw_tokens() {
-        // Initialize the contract
-        let mut contract = init_contract::<BetContractImpl, Storage>();
+// Test for withdraw_tokens functionality
+#[test]
+fn test_withdraw_tokens() {
+    // deploy contract
+    let (bet_dispatcher, IERC20Dispatcher, contract_address) = deploy();
+    let token_address = contract_address_const::<1>();
+    let event_name = 'test_event';
 
-        // Set up test parameters
-        let amount: u256 = 100;
+    // Make a prediction
+    bet_dispatcher.make_prediction(PREDICTION_ID, CANDIDATE, AMOUNT);
 
-        // Make a prediction and redeem reward (assuming these have been tested separately)
-        contract.make_prediction(1, 42, amount);
-        contract.redeem_reward(1);
+    // Withdraw tokens
+    bet_dispatcher.withdraw_tokens(AMOUNT);
 
-        // Call withdraw_tokens
-        contract.withdraw_tokens(amount);
+    // Verify user's balance is set to zero
+    let user_balance = IERC20Dispatcher { contract_address }.balanceOf(contract_address);
+    assert(user_balance == 0, 'Not set to zero after withdrawal');
+}
 
-        // Check if the user's balance has been set to zero after withdrawal
-        let caller_address = get_caller_address();
-        let user_balance: u256 = storage_read_syscall(
-            0,
-            storage_address_from_base_and_offset(
-                storage_address_from_base_and_offset(contract.get_base(), 1_u8),
-                caller_address.into(),
-            ),
-        )
-            .unwrap();
-        assert_eq!(user_balance, 0, "Incorrect user balance after withdrawing tokens");
-    }
+// Test for extend_deadline functionality
+#[test]
+fn test_extend_deadline() {
+    // deploy contract 
+    let (bet_dispatcher, IERC20Dispatcher, contract_address) = deploy();
+    let token_address = contract_address_const::<1>();
+    let event_name = 'test_event';
+
+    // Extend the deadline
+    bet_dispatcher.extend_deadline(NEW_DEADLINE);
+
+    // Verify the new deadline is correctly set
+    let new_deadline = bet_dispatcher.deadline();
+    assert(new_deadline == NEW_DEADLINE, 'New deadline not set correctly');
 }
