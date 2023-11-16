@@ -11,7 +11,7 @@ casm = true
 starknet = ">=2.2.0"
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.10.1" }
 
-[tool.sncast]
+[tool.sncast.account]
 account = "account"
 accounts-file = "/home/frank/.starknet_accounts/starknet_open_zeppelin_accounts.json"
 url = "http://localhost:5050/rpc"
