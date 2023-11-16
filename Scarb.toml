@@ -6,8 +6,12 @@ version = "0.1.0"
 sierra = true
 casm = true
 
+# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 [dependencies]
 starknet = ">=2.2.0"
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.10.1" }
 
-
+[tool.sncast]
+account = "account"
+accounts-file = "/home/frank/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "http://localhost:5050/rpc"

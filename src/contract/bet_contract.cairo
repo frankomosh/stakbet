@@ -36,6 +36,26 @@ mod BetContract {
         winnerIndex: u8,
         deadline: u64,
     }
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        _tokenAddress: ContractAddress,
+        _oracleAddress: ContractAddress,
+        _totalTokens: felt252,
+        _totalPayout: felt252,
+        _winnerIndex: u8,
+        deadline: u64
+    ) {
+        assert(!_tokenAddress.is_zero(), 'Token address cannot be zero');
+        assert(!_oracleAddress.is_zero(), 'Oracle address cannot be zero');
+        //Updating public variables of the contract
+        self.token.write(_tokenAddress);
+        self.oracle.write(_oracleAddress);
+        self.totalTokens.write(_totalTokens);
+        self.totalPayout.write(_totalPayout);
+        self.winnerIndex.write(_winnerIndex);
+        self.deadline.write(deadline);
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -57,26 +77,7 @@ mod BetContract {
         candidate: felt252,
         redeemed: felt252,
     }
-    #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        _tokenAddress: ContractAddress,
-        _oracleAddress: ContractAddress,
-        _totalTokens: felt252,
-        _totalPayout: felt252,
-        _winnerIndex: u8,
-        deadline: u64
-    ) {
-        // assert(!self._tokenAddress.is_zero(), "Token address cannot be zero");
-        // assert(!self._oracleAddress.is_zero(), "Oracle address cannot be zero");
-        //Updating public variables of the contract
-        self.token.write(_tokenAddress);
-        self.oracle.write(_oracleAddress);
-        self.totalTokens.write(_totalTokens);
-        self.totalPayout.write(_totalPayout);
-        self.winnerIndex.write(_winnerIndex);
-        self.deadline.write(deadline);
-    }
+
 
     #[external(v0)]
     impl BetContractImpl of super::IBetContract<ContractState> {
