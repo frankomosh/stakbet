@@ -27,11 +27,6 @@ mod test {
         //Returning the dispatcher and contract address
         (bet_dispatcher, ierc20_dispatcher, contract_address)
     }
-    // Declaring external contract functions
-    // declare::BetContract.make_prediction;
-    // declare BetContract.redeem_reward;
-    // declare BetContract.withdraw_tokens;
-    // declare BetContract.extend_deadline;
 
     // Constants for test values
     const PREDICTION_ID: felt252 = 1;
@@ -52,12 +47,6 @@ mod test {
         // Verify user's balance is updated
         let user_balance = IERC20Dispatcher { contract_address }.balanceOf(contract_address);
         assert(user_balance == AMOUNT, 'User balance not updated');
-    // // Verify prediction details
-    // let prediction = bet_dispatcher.p(PREDICTION_ID);
-    // assert(prediction.participant == , 'Invalid participant');
-    // assert(prediction.tokenAmount == AMOUNT, 'Invalid token amount');
-    // assert(prediction.candidate == CANDIDATE, 'Invalid candidate');
-    // assert(prediction.redeemed == false, 'Prediction already redeemed');
     }
 
     // Test for redeem_reward functionality

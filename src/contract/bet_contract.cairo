@@ -6,7 +6,7 @@ trait IBetContract<ContractState> {
     fn make_prediction(
         ref self: ContractState, _predictionID: felt252, _candidate: felt252, _amount: u256
     ) -> ();
-    fn redeem_reward(ref self: ContractState, predictionID: felt252) -> ();
+    fn redeem_reward(ref self: ContractState, _predictionID: felt252) -> ();
     fn withdraw_tokens(ref self: ContractState, amount: u256) -> ();
     fn extend_deadline(ref self: ContractState, new_deadline: u64) -> ();
 }
@@ -113,6 +113,7 @@ mod BetContract {
             // Update user balance
             let user_bal = self.user_balances.read(caller);
             let new_user_bal = user_bal + _amount;
+
             self.user_balances.write(caller, new_user_bal);
             //Emit new prediction event
             self
@@ -125,9 +126,9 @@ mod BetContract {
                     }
                 );
         }
-        fn redeem_reward(ref self: ContractState, predictionID: felt252) -> () {
+        fn redeem_reward(ref self: ContractState, _predictionID: felt252) -> () {
             // get the winner and see if the prediction was correct
-            let p = self.predictions.read(predictionID);
+            let p = self.predictions.read(_predictionID);
             let winner = IOracleDispatcher { contract_address: self.oracle.read() }
                 .getPredictionWinner();
             //Make sure that deadline is passed before reward is processed
@@ -150,7 +151,7 @@ mod BetContract {
                 candidate: p.candidate,
                 redeemed: bool_to_felt252(true),
             };
-            self.predictions.write(predictionID, new_p);
+            self.predictions.write(_predictionID, new_p);
         }
         fn withdraw_tokens(ref self: ContractState, amount: u256) {
             // get the user balance
