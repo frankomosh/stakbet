@@ -14,7 +14,7 @@ mod test {
     use stakbet::contract::bet_contract::{
         IBetContract, IBetContractDispatcher, IBetContractDispatcherTrait
     };
-
+    // tests
     fn deploy() -> (IBetContractDispatcher, IERC20Dispatcher, ContractAddress) {
         // Deploy BetContract
         let contract = declare('BetContract');
